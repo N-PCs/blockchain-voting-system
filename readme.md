@@ -18,5 +18,4 @@ The frontend will run on `http://localhost:3000` and proxy API requests to the b
 
 ## Usage
 - Use the form to cast votes (enter a unique Voter ID and select a candidate).
-- Click "Mine Block" to add pending votes to the blockchain.
 - View real-time results and the full blockchain.
