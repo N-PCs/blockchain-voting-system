@@ -19,3 +19,8 @@ The frontend will run on `http://localhost:3000` and proxy API requests to the b
 ## Usage
 - Use the form to cast votes (enter a unique Voter ID and select a candidate).
 - View real-time results and the full blockchain.
+
+## Benefits
+- Safe and secure
+- Controlled Voting
+- No fake votes 
