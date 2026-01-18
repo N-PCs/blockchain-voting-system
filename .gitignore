@@ -1,0 +1,17 @@
+  # Python
+  venv/
+  __pycache__/
+  .pyc
+  venv/
+  
+  # Node.js
+  node_modules/
+  dist/
+  build/
+  .env
+
+  # OS-specific
+  .DS_Store
+  Thumbs.db
+ 
+  
