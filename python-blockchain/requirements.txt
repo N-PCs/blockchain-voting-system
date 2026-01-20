@@ -1,0 +1,32 @@
+# ============================================
+# BLOCKCHAIN VOTING SYSTEM - PYTHON DEPENDENCIES
+# ============================================
+
+# Web Framework
+Flask==2.3.3
+Flask-CORS==4.0.0
+Flask-Limiter==3.3.1
+
+# Cryptography
+cryptography==41.0.7
+pycryptodome==3.19.0
+
+# Utilities
+requests==2.31.0
+python-dotenv==1.0.0
+pytz==2023.3
+click==8.1.7
+
+# Database (for blockchain storage)
+sqlalchemy==2.0.23
+alembic==1.12.1
+
+# Development & Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.0
+
+# Process Management
+gunicorn==21.2.0
