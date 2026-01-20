@@ -6,6 +6,7 @@ PHP backend communicates with this service for all blockchain operations.
 import os
 import sys
 from pathlib import Path
+from functools import wraps
 
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -64,6 +65,7 @@ def get_blockchain():
 def require_api_key():
     """Decorator to require API key for certain endpoints."""
     def decorator(f):
+        @wraps(f)
         def wrapper(*args, **kwargs):
             if app.config['REQUIRE_API_KEY']:
                 api_key = request.headers.get('X-API-Key') or request.args.get('api_key')

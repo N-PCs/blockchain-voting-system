@@ -491,8 +491,70 @@ class UserModel
     }
 
     /**
+     * Update user information
+     *
+     * @param int $userId User ID
+     * @param array $updateData Data to update
+     * @return bool True on success
+     */
+    public function updateUser(int $userId, array $updateData): bool
+    {
+        if (empty($updateData)) {
+            return false;
+        }
+
+        $user = $this->getUserById($userId);
+        if (!$user) {
+            throw new RuntimeException('User not found');
+        }
+
+        $allowedFields = ['first_name', 'last_name', 'email', 'is_active'];
+        $updateData = array_intersect_key($updateData, array_flip($allowedFields));
+
+        if (empty($updateData)) {
+            return false;
+        }
+
+        $setParts = [];
+        $params = [':id' => $userId];
+
+        foreach ($updateData as $field => $value) {
+            $setParts[] = "{$field} = :{$field}";
+            $params[":{$field}"] = $value;
+        }
+
+        $setParts[] = 'updated_at = CURRENT_TIMESTAMP';
+
+        $sql = "UPDATE users SET " . implode(', ', $setParts) . " WHERE id = :id";
+
+        DatabaseConfig::beginTransaction();
+
+        try {
+            $stmt = DatabaseConfig::executeQuery($sql, $params);
+
+            // Log audit
+            $this->logAudit(
+                null, // No specific user performing this action
+                'update_user',
+                'users',
+                $userId,
+                $user,
+                array_merge($user, $updateData)
+            );
+
+            DatabaseConfig::commit();
+            return $stmt->rowCount() > 0;
+
+        } catch (PDOException $e) {
+            DatabaseConfig::rollback();
+            error_log('User update failed: ' . $e->getMessage());
+            throw new RuntimeException('Failed to update user');
+        }
+    }
+
+    /**
      * Log admin action
-     * 
+     *
      * @param int $adminId Admin ID
      * @param string $action Action type
      * @param int|null $targetUserId Target user ID
@@ -507,19 +569,19 @@ class UserModel
         array $details
     ): void {
         $sql = "INSERT INTO admin_actions (
-            admin_id, 
-            action, 
-            target_user_id, 
-            target_election_id, 
+            admin_id,
+            action,
+            target_user_id,
+            target_election_id,
             details
         ) VALUES (
-            :admin_id, 
-            :action, 
-            :target_user_id, 
-            :target_election_id, 
+            :admin_id,
+            :action,
+            :target_user_id,
+            :target_election_id,
             :details
         )";
-        
+
         $params = [
             ':admin_id' => $adminId,
             ':action' => $action,
@@ -527,7 +589,7 @@ class UserModel
             ':target_election_id' => $targetElectionId,
             ':details' => json_encode($details)
         ];
-        
+
         DatabaseConfig::executeQuery($sql, $params);
     }
 }

@@ -229,6 +229,23 @@ class ApiService {
       return false;
     }
   }
+
+  // Direct axios methods for compatibility
+  get(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse> {
+    return this.api.get(url, config);
+  }
+
+  post(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse> {
+    return this.api.post(url, data, config);
+  }
+
+  put(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse> {
+    return this.api.put(url, data, config);
+  }
+
+  delete(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse> {
+    return this.api.delete(url, config);
+  }
 }
 
 // Singleton instance

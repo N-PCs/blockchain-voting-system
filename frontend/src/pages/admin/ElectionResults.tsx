@@ -69,14 +69,14 @@ const ElectionResults: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    const unsubscribe = api.websocket.onElectionResults((notification: ElectionResultsNotification) => {
+    const unsubscribe = onElectionUpdate((notification: ElectionResultsNotification) => {
       if (notification.electionId === id) {
         handleNewResults(notification);
       }
     });
 
     return unsubscribe;
-  }, [id]);
+  }, [id, onElectionUpdate]);
 
   const fetchElectionResults = async () => {
     try {

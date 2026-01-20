@@ -123,7 +123,8 @@ export interface BlockchainStats {
 export interface WebSocketMessage {
   type: string;
   data: any;
-  timestamp: string;
+  timestamp: string | number;
+  [key: string]: any; // Allow additional properties
 }
 
 export interface VoteNotification {

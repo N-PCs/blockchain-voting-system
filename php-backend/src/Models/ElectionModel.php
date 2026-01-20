@@ -254,4 +254,137 @@ class ElectionModel
             'details' => $result
         ];
     }
+
+    /**
+     * Get all elections
+     *
+     * @return array All elections
+     */
+    public function getAllElections(): array
+    {
+        $sql = "SELECT
+            id,
+            uuid,
+            title,
+            description,
+            election_type,
+            start_date,
+            end_date,
+            status,
+            created_at
+        FROM elections
+        ORDER BY created_at DESC";
+
+        $stmt = DatabaseConfig::executeQuery($sql);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Get election candidates by election UUID
+     *
+     * @param string $electionUuid Election UUID
+     * @return array Candidates
+     */
+    public function getElectionCandidates(string $electionUuid): array
+    {
+        $sql = "SELECT
+            c.id,
+            c.uuid,
+            c.user_id,
+            c.party_affiliation,
+            c.biography,
+            c.position,
+            c.photo_url,
+            CONCAT(u.first_name, ' ', u.last_name) as name,
+            u.first_name,
+            u.last_name
+        FROM candidates c
+        INNER JOIN users u ON c.user_id = u.id
+        INNER JOIN elections e ON c.election_id = e.id
+        WHERE e.uuid = :election_uuid
+            AND c.is_active = TRUE
+        ORDER BY c.party_affiliation, c.position";
+
+        $stmt = DatabaseConfig::executeQuery($sql, [':election_uuid' => $electionUuid]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Create a new election
+     *
+     * @param array $electionData Election data
+     * @param int $createdBy User ID who created the election
+     * @return array Created election data
+     */
+    public function createElection(array $electionData, int $createdBy): array
+    {
+        // Validate required fields
+        $requiredFields = ['title', 'election_type', 'start_date', 'end_date'];
+        foreach ($requiredFields as $field) {
+            if (empty($electionData[$field])) {
+                throw new RuntimeException("Field '{$field}' is required");
+            }
+        }
+
+        $sql = "INSERT INTO elections (
+            title,
+            description,
+            election_type,
+            start_date,
+            end_date,
+            status,
+            created_by
+        ) VALUES (
+            :title,
+            :description,
+            :election_type,
+            :start_date,
+            :end_date,
+            :status,
+            :created_by
+        )";
+
+        $params = [
+            ':title' => trim($electionData['title']),
+            ':description' => trim($electionData['description'] ?? ''),
+            ':election_type' => $electionData['election_type'],
+            ':start_date' => $electionData['start_date'],
+            ':end_date' => $electionData['end_date'],
+            ':status' => $electionData['status'] ?? 'draft',
+            ':created_by' => $createdBy
+        ];
+
+        DatabaseConfig::beginTransaction();
+
+        try {
+            $stmt = DatabaseConfig::executeQuery($sql, $params);
+            $electionId = DatabaseConfig::lastInsertId();
+
+            // Get the created election
+            $createdElection = $this->getElectionById((int)$electionId);
+
+            DatabaseConfig::commit();
+
+            return $createdElection;
+
+        } catch (PDOException $e) {
+            DatabaseConfig::rollback();
+            error_log('Election creation failed: ' . $e->getMessage());
+            throw new RuntimeException('Failed to create election. Please try again.');
+        }
+    }
+
+    /**
+     * Get election results
+     *
+     * @param string $electionUuid Election UUID
+     * @return array Election results
+     */
+    public function getElectionResults(string $electionUuid): array
+    {
+        $sql = "CALL GetElectionResults(:election_uuid)";
+
+        $stmt = DatabaseConfig::executeQuery($sql, [':election_uuid' => $electionUuid]);
+        return $stmt->fetchAll();
+    }
 }

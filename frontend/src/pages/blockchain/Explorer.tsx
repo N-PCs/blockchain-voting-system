@@ -23,6 +23,7 @@ import {
   FaCheckCircle,
   FaClock,
   FaFire,
+  FaLock,
 } from 'react-icons/fa';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-toastify';
@@ -40,7 +41,7 @@ import { Block, BlockchainStats, BlockNotification } from '@/types';
 
 const BlockchainExplorer: React.FC = () => {
   const api = useApi();
-  const { isConnected, notifications } = useWebSocket();
+  const { isConnected, notifications, onBlockMined } = useWebSocket();
 
   const [stats, setStats] = useState<BlockchainStats | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -59,12 +60,12 @@ const BlockchainExplorer: React.FC = () => {
   }, [currentPage]);
 
   useEffect(() => {
-    const unsubscribe = api.websocket.onBlockMined((notification: BlockNotification) => {
+    const unsubscribe = onBlockMined((notification: BlockNotification) => {
       handleNewBlock(notification);
     });
 
     return unsubscribe;
-  }, []);
+  }, [onBlockMined]);
 
   const fetchBlockchainData = async () => {
     try {

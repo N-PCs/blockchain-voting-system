@@ -29,14 +29,14 @@ import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 
 // Components
-import StatCard from '@/components/admin/StatCard';
+import StatCard from '@/components/dashboard/StatCard';
 import SystemHealth from '@/components/admin/SystemHealth';
 import RecentActivity from '@/components/admin/RecentActivity';
 
 // Hooks
 import { useAuth } from '@/hooks/useAuth';
-import { useApi } from '@/hooks/useApi';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useApi } from '@/hooks/useApi';
 
 // Types
 import { Election, User, VoteNotification, BlockNotification } from '@/types';
@@ -44,7 +44,7 @@ import { Election, User, VoteNotification, BlockNotification } from '@/types';
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const api = useApi();
-  const { isConnected } = useWebSocket();
+  const { isConnected  } = useWebSocket();
 
   const [systemStats, setSystemStats] = useState({
     totalVoters: 0,
@@ -70,11 +70,11 @@ const AdminDashboard: React.FC = () => {
 
   // Listen for real-time updates
   useEffect(() => {
-    const unsubscribeVote = api.websocket.onVoteCast((notification: VoteNotification) => {
+    const unsubscribeVote = onVoteCast((notification: VoteNotification) => {
       handleNewVote(notification);
     });
 
-    const unsubscribeBlock = api.websocket.onBlockMined((notification: BlockNotification) => {
+    const unsubscribeBlock = onBlockMined((notification: BlockNotification) => {
       handleNewBlock(notification);
     });
 
@@ -82,7 +82,7 @@ const AdminDashboard: React.FC = () => {
       unsubscribeVote();
       unsubscribeBlock();
     };
-  }, []);
+  }, [onVoteCast, onBlockMined]);
 
   const fetchDashboardData = async () => {
     try {

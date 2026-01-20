@@ -1,58 +1,125 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * Voting System PHP Backend - Entry Point
+ * Using Slim Framework for PSR-7 compliance
  */
 
-// Display all errors for development
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+require __DIR__ . '/../vendor/autoload.php';
 
-// Set CORS headers
-header('Access-Control-Allow-Origin: ' . ($_ENV['CORS_ALLOWED_ORIGINS'] ?? 'http://localhost:3000'));
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key');
-header('Access-Control-Allow-Credentials: true');
+use Slim\Factory\AppFactory;
+use Slim\Routing\RouteCollectorProxy;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use VotingSystem\Controllers\VoteController;
+use VotingSystem\Controllers\AuthController;
+use VotingSystem\Controllers\ElectionController;
+use VotingSystem\Controllers\AdminController;
+use VotingSystem\Middleware\AuthMiddleware;
+use VotingSystem\Middleware\AdminMiddleware;
+use VotingSystem\Middleware\CorsMiddleware;
+use VotingSystem\Middleware\JsonBodyParserMiddleware;
+use VotingSystem\Services\Logger;
 
-// Handle preflight requests
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
+// Load environment variables
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv->load();
 
-// Simple routing
-$request_uri = $_SERVER['REQUEST_URI'];
-$base_path = '/api/v1';
+// Create Slim App
+$app = AppFactory::create();
 
-// Remove base path
-if (strpos($request_uri, $base_path) === 0) {
-    $request_uri = substr($request_uri, strlen($base_path));
-}
+// Add error middleware
+$app->addErrorMiddleware(
+    $_ENV['APP_ENV'] === 'development',
+    true,
+    true,
+    Logger::getInstance('slim-errors')
+);
 
-// Simple router
-switch ($request_uri) {
-    case '/health':
-        echo json_encode(['status' => 'healthy', 'timestamp' => date('c')]);
-        break;
-        
-    case '/auth/login':
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = json_decode(file_get_contents('php://input'), true);
-            echo json_encode([
-                'success' => true,
-                'data' => [
-                    'user' => [
-                        'id' => '1',
-                        'email' => $data['email'] ?? '',
-                        'userType' => 'admin'
-                    ],
-                    'token' => 'test-jwt-token'
-                ]
-            ]);
-        }
-        break;
-        
-    default:
-        http_response_code(404);
-        echo json_encode(['success' => false, 'error' => 'Endpoint not found']);
-        break;
-}
+// Add middleware
+$app->add(new CorsMiddleware());
+$app->add(new JsonBodyParserMiddleware());
+
+// Routes
+$app->group('/api/v1', function (RouteCollectorProxy $group) {
+    // Health check
+    $group->get('/health', function (Request $request, Response $response) {
+        $data = [
+            'status' => 'healthy',
+            'timestamp' => date('c'),
+            'version' => '1.0.0'
+        ];
+        $response->getBody()->write(json_encode($data));
+        return $response->withHeader('Content-Type', 'application/json');
+    });
+
+    // Authentication routes
+    $group->post('/auth/login', [AuthController::class, 'login']);
+    $group->post('/auth/register', [AuthController::class, 'register']);
+    $group->post('/auth/logout', [AuthController::class, 'logout'])->add(new AuthMiddleware());
+    $group->get('/auth/verify', [AuthController::class, 'verifyToken'])->add(new AuthMiddleware());
+
+    // User profile routes
+    $group->get('/profile', [AuthController::class, 'getProfile'])->add(new AuthMiddleware());
+    $group->put('/profile', [AuthController::class, 'updateProfile'])->add(new AuthMiddleware());
+
+    // Election routes
+    $group->get('/elections', [ElectionController::class, 'getElections'])->add(new AuthMiddleware());
+    $group->get('/elections/{id}', [ElectionController::class, 'getElection'])->add(new AuthMiddleware());
+    $group->get('/elections/{id}/candidates', [ElectionController::class, 'getElectionCandidates'])->add(new AuthMiddleware());
+
+    // Voting routes
+    $group->post('/votes', [VoteController::class, 'castVote'])->add(new AuthMiddleware());
+    $group->get('/votes/{id}', [VoteController::class, 'getVoteDetails'])->add(new AuthMiddleware());
+    $group->get('/votes/history', [VoteController::class, 'getVotingHistory'])->add(new AuthMiddleware());
+    $group->post('/votes/{id}/verify', [VoteController::class, 'verifyVote'])->add(new AuthMiddleware());
+
+    // Blockchain routes
+    $group->get('/blockchain/stats', [ElectionController::class, 'getBlockchainStats'])->add(new AuthMiddleware());
+    $group->get('/blockchain/blocks', [ElectionController::class, 'getBlocks'])->add(new AuthMiddleware());
+    $group->get('/blockchain/blocks/{index}', [ElectionController::class, 'getBlock'])->add(new AuthMiddleware());
+    $group->get('/blockchain/transactions/{id}', [ElectionController::class, 'getTransaction'])->add(new AuthMiddleware());
+
+    // Admin routes
+    $group->group('/admin', function (RouteCollectorProxy $adminGroup) {
+        // User management
+        $adminGroup->get('/users/pending', [AdminController::class, 'getPendingRegistrations']);
+        $adminGroup->post('/users/{id}/verify', [AdminController::class, 'verifyUser']);
+        $adminGroup->post('/users/{id}/reject', [AdminController::class, 'rejectUser']);
+
+        // Election management
+        $adminGroup->post('/elections', [AdminController::class, 'createElection']);
+        $adminGroup->put('/elections/{id}', [AdminController::class, 'updateElection']);
+        $adminGroup->delete('/elections/{id}', [AdminController::class, 'deleteElection']);
+        $adminGroup->post('/elections/{id}/start', [AdminController::class, 'startElection']);
+        $adminGroup->post('/elections/{id}/end', [AdminController::class, 'endElection']);
+
+        // Candidate management
+        $adminGroup->post('/elections/{electionId}/candidates', [AdminController::class, 'addCandidate']);
+        $adminGroup->delete('/elections/{electionId}/candidates/{candidateId}', [AdminController::class, 'removeCandidate']);
+
+        // Election results
+        $adminGroup->get('/elections/{id}/results', [AdminController::class, 'getElectionResults']);
+
+        // Audit trail
+        $adminGroup->get('/audit', [AdminController::class, 'getAuditTrail']);
+        $adminGroup->get('/audit/{id}', [AdminController::class, 'getAuditEntry']);
+    })->add(new AdminMiddleware());
+
+});
+
+// Handle 404
+$app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function (Request $request, Response $response) {
+    $response->getBody()->write(json_encode([
+        'success' => false,
+        'error' => 'Endpoint not found'
+    ]));
+    return $response
+        ->withHeader('Content-Type', 'application/json')
+        ->withStatus(404);
+});
+
+// Run the app
+$app->run();
