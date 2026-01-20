@@ -29,6 +29,33 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.conda/
+conda/
+miniconda/
+anaconda/
+pyenv/
+
+# Python cache and distribution
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Node.js
 node_modules/
@@ -41,6 +68,16 @@ lerna-debug.log*
 .yarn-integrity
 yarn.lock
 package-lock.json
+.pnpm-lock.yaml
+.npmrc
+.yarnrc
+.yarnrc.yml
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
 # PHP
 vendor/
@@ -230,12 +267,6 @@ out/
 bin/
 obj/
 
-# Docker
-.dockerignore
-
-# Kubernetes
-*.yaml.bak
-*.yml.bak
 
 # Terraform
 *.tfstate
@@ -251,6 +282,34 @@ obj/
 *.key
 *.p12
 *.pfx
+
+# Blockchain specific
+*.wallet
+wallet.dat
+blockchain.db
+*.blk
+*.dat
+nodekey
+genesis.json
+keystore/
+geth/
+parity/
+chaindata/
+
+# Windows XAMPP specific (if not using default location)
+xampp/
+htdocs/
+xampp-control.log
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+mysql.sock
+postgresql.conf
 
 # Secrets and certificates
 secrets/
@@ -320,6 +379,7 @@ tramp
 
 # Cursor (AI IDE)
 .cursor/
+*.cursor
 
 # Temporary files
 *.tmp
