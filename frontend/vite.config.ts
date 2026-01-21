@@ -9,6 +9,26 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    // Split large vendor chunk and relax warning threshold
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          vendor: [
+            'axios',
+            'bootstrap',
+            'react-bootstrap',
+            'react-icons',
+            'react-toastify',
+            'recharts',
+            'zustand',
+          ],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1500,
+  },
   server: {
     port: 3000,
     host: true,

@@ -11,11 +11,13 @@ class HttpServer {
   /**
    * Create HTTP server
    * @param {WebSocketServer} wsServer - WebSocket server instance
+   * @param {express.Application} [app] - Optional shared Express app
    */
-  constructor(wsServer) {
-    this.app = express();
+  constructor(wsServer, app = null) {
+    this.app = app || express();
     this.wsServer = wsServer;
-    
+    this.server = null;
+
     this.setupMiddleware();
     this.setupRoutes();
     this.setupErrorHandling();
@@ -242,8 +244,30 @@ class HttpServer {
    * Start HTTP server
    * @returns {Promise} Server start promise
    */
-  start() {
+  start(existingServer = null) {
     return new Promise((resolve, reject) => {
+      if (existingServer) {
+        // Use shared HTTP server (so WS + HTTP share same port)
+        this.server = existingServer.listen(config.port, config.host, () => {
+          logger.info(`HTTP server started on http://${config.host}:${config.port}`, {
+            port: config.port,
+            host: config.host,
+            environment: config.env,
+          });
+          resolve(this.server);
+        });
+
+        this.server.on('error', (error) => {
+          logger.error('HTTP server failed to start:', {
+            error: error.message,
+            port: config.port,
+          });
+          reject(error);
+        });
+        return;
+      }
+
+      // Fallback: create standalone listener if no shared server provided
       this.server = this.app.listen(config.port, config.host, () => {
         logger.info(`HTTP server started on http://${config.host}:${config.port}`, {
           port: config.port,

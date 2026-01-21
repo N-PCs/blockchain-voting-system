@@ -29,22 +29,17 @@ class VotingWebSocketServer {
       });
 
       // Create HTTP server
-      const http = require('http');
       this.httpApp = require('express')();
       this.httpServer = http.createServer(this.httpApp);
 
       // Create WebSocket server
       this.wsServer = new WebSocketServer(this.httpServer);
 
-      // Create HTTP server with REST API
-      this.httpAppServer = new HttpServer(this.wsServer);
-      this.httpApp = this.httpAppServer.app;
+      // Create HTTP server with REST API (share same Express app / HTTP server)
+      this.httpAppServer = new HttpServer(this.wsServer, this.httpApp);
 
-      // Attach HTTP app to server
-      this.httpServer.on('request', this.httpApp);
-
-      // Start HTTP server
-      await this.httpAppServer.start();
+      // Start HTTP+WS on same server
+      await this.httpAppServer.start(this.httpServer);
 
       logger.info('WebSocket server started successfully', {
         port: config.port,
