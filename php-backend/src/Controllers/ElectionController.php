@@ -77,6 +77,44 @@ class ElectionController
     }
 
     /**
+     * Get active elections
+     */
+    public function getActiveElections(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        try {
+            $limit = (int) ($request->getQueryParams()['limit'] ?? 10);
+            $limit = $limit > 0 ? $limit : 10;
+
+            $elections = $this->electionModel->getActiveElections($limit);
+
+            $electionsData = array_map(function ($election) {
+                return [
+                    'id' => $election['uuid'],
+                    'title' => $election['title'],
+                    'description' => $election['description'],
+                    'election_type' => $election['election_type'],
+                    'start_date' => $election['start_date'],
+                    'end_date' => $election['end_date'],
+                    'status' => 'active',
+                ];
+            }, $elections);
+
+            return $this->jsonResponse($response, [
+                'success' => true,
+                'data' => $electionsData
+            ]);
+
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to get active elections', ['error' => $e->getMessage()]);
+
+            return $this->jsonResponse($response, [
+                'success' => false,
+                'error' => 'Failed to load active elections'
+            ], 500);
+        }
+    }
+
+    /**
      * Get single election
      */
     public function getElection(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -159,6 +197,44 @@ class ElectionController
     }
 
     /**
+     * Check voter eligibility for an election
+     */
+    public function checkEligibility(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $electionUuid = $request->getAttribute('id');
+        $userId = (int) $request->getAttribute('user_id');
+
+        try {
+            $election = $this->electionModel->getElectionByUuid($electionUuid);
+            if (!$election) {
+                return $this->jsonResponse($response, [
+                    'success' => false,
+                    'error' => 'Election not found'
+                ], 404);
+            }
+
+            $eligibility = $this->electionModel->checkVoterEligibility($userId, (int)$election['id']);
+
+            return $this->jsonResponse($response, [
+                'success' => true,
+                'data' => $eligibility
+            ]);
+
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to check eligibility', [
+                'election_uuid' => $electionUuid,
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+
+            return $this->jsonResponse($response, [
+                'success' => false,
+                'error' => 'Failed to check eligibility'
+            ], 500);
+        }
+    }
+
+    /**
      * Get blockchain statistics
      */
     public function getBlockchainStats(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -184,8 +260,9 @@ class ElectionController
     public function getBlocks(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         try {
-            $page = (int) ($request->getQueryParams()['page'] ?? 1);
-            $perPage = (int) ($request->getQueryParams()['per_page'] ?? 10);
+            $query = $request->getQueryParams();
+            $page = (int) ($query['page'] ?? 1);
+            $perPage = (int) ($query['per_page'] ?? $query['perPage'] ?? 10);
 
             $blocks = $this->blockchainService->getBlocks($page, $perPage);
 

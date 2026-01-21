@@ -58,14 +58,17 @@ Before you begin, ensure you have the following installed:
 
 ## 🛠️ Development Setup
 
-### Windows XAMPP Setup (Recommended)
+### Windows XAMPP Setup (Easiest)
 
 ```batch
+# Install XAMPP from https://www.apachefriends.org/
+# Start XAMPP Control Panel and start Apache + MySQL
+
 # Run Windows setup script
 setup-windows.bat
 
-# Start XAMPP Control Panel and start Apache + MySQL
-# Open phpMyAdmin (http://localhost/phpmyadmin) and create database 'voting_system'
+# Open phpMyAdmin (http://localhost/phpmyadmin)
+# Create database 'voting_system' and import database/schema.sql
 
 # Run database setup
 setup-database.bat
@@ -79,6 +82,37 @@ cd ../frontend && npm install
 # Terminal 1: cd python-blockchain && python run.py
 # Terminal 2: cd node-ws && npm start
 # Terminal 3: cd frontend && npm run dev
+
+# Access the application
+start http://localhost:5173
+```
+
+### Windows Standalone MySQL Setup (Advanced)
+
+```batch
+# Install MySQL Server from https://dev.mysql.com/downloads/mysql/
+# Start MySQL service (run Command Prompt as Administrator)
+# net start MySQL96  (or whatever your service name is)
+
+# Run Windows setup script
+setup-windows.bat
+
+# Set up MySQL database and user
+mysql-setup.bat
+
+# Run database setup
+setup-database.bat
+
+# Install dependencies
+cd python-blockchain && pip install -r requirements.txt
+cd ../node-ws && npm install
+cd ../frontend && npm install
+
+# Start services in separate terminals:
+# Terminal 1: cd python-blockchain && python run.py
+# Terminal 2: cd node-ws && npm start
+# Terminal 3: cd frontend && npm run dev
+# Terminal 4: cd php-backend && php -S localhost:8000 -t public/
 
 # Access the application
 start http://localhost:5173

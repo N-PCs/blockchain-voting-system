@@ -15,6 +15,7 @@ import {
   BlockchainStats,
   Transaction,
 } from '@/types';
+import { AUTH_TOKEN_KEY, USER_STORAGE_KEY } from '@/constants/storage';
 
 class ApiService {
   private api: AxiosInstance;
@@ -48,7 +49,7 @@ class ApiService {
     // Request interceptor for auth token
     this.api.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem(AUTH_TOKEN_KEY);
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -63,8 +64,8 @@ class ApiService {
       (error) => {
         if (error.response?.status === 401) {
           // Token expired or invalid
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('user');
+          localStorage.removeItem(AUTH_TOKEN_KEY);
+          localStorage.removeItem(USER_STORAGE_KEY);
           window.location.href = '/login';
         }
         return Promise.reject(error);
@@ -81,15 +82,15 @@ class ApiService {
   async login(credentials: { email: string; password: string }): Promise<ApiResponse<AuthUser>> {
     const response = await this.api.post<ApiResponse<AuthUser>>('/auth/login', credentials);
     if (response.data.success && response.data.data) {
-      localStorage.setItem('auth_token', response.data.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.data.user));
+      localStorage.setItem(AUTH_TOKEN_KEY, response.data.data.token);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.data.data.user));
     }
     return response.data;
   }
 
   async logout(): Promise<void> {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
   }
 
   async getProfile(): Promise<ApiResponse<User>> {
@@ -189,11 +190,11 @@ class ApiService {
 
   // Utility methods
   getAuthToken(): string | null {
-    return localStorage.getItem('auth_token');
+    return localStorage.getItem(AUTH_TOKEN_KEY);
   }
 
   getCurrentUser(): User | null {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem(USER_STORAGE_KEY);
     return userStr ? JSON.parse(userStr) : null;
   }
 

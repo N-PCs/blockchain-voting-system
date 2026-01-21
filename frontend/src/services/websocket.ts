@@ -18,7 +18,8 @@ class WebSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
-  private heartbeatInterval: number | null = null;
+  private heartbeatIntervalId: number | null = null;
+  private heartbeatTimeoutId: number | null = null;
   private messageHandlers = new Map<string, MessageHandler[]>();
   private connectionHandlers: ConnectionHandler[] = [];
   private isConnected = false;
@@ -88,12 +89,12 @@ class WebSocketService {
       this.attemptReconnect();
     }
 
-    this.emit('disconnected', { code: event.code, reason: event.reason });
+    this.emit('disconnected', { type: 'disconnected', data: { code: event.code, reason: event.reason }, timestamp: Date.now() });
   }
 
   private handleError(event: Event): void {
     console.error('WebSocket error:', event);
-    this.emit('error', { type: 'connection_error', event });
+    this.emit('error', { type: 'error', data: { type: 'connection_error', event }, timestamp: Date.now() });
   }
 
   private handleMessage(event: MessageEvent): void {
@@ -112,25 +113,33 @@ class WebSocketService {
 
   private handlePong(): void {
     // Reset heartbeat timeout
-    if (this.heartbeatInterval) {
-      clearTimeout(this.heartbeatInterval);
-      this.heartbeatInterval = window.setTimeout(() => {
+    if (this.heartbeatTimeoutId) {
+      window.clearTimeout(this.heartbeatTimeoutId);
+    }
+    this.heartbeatTimeoutId = window.setTimeout(() => {
         console.warn('Heartbeat timeout, reconnecting...');
         this.reconnect();
       }, 60000); // 60 second timeout
-    }
   }
 
   private startHeartbeat(): void {
+    // Clear existing timers if any to avoid stacking intervals/timeouts
+    if (this.heartbeatIntervalId) {
+      window.clearInterval(this.heartbeatIntervalId);
+    }
+    if (this.heartbeatTimeoutId) {
+      window.clearTimeout(this.heartbeatTimeoutId);
+    }
+
     // Send ping every 30 seconds
-    setInterval(() => {
+    this.heartbeatIntervalId = window.setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
         this.send({ type: 'ping' });
       }
     }, 30000);
 
     // Set initial heartbeat timeout
-    this.heartbeatInterval = window.setTimeout(() => {
+    this.heartbeatTimeoutId = window.setTimeout(() => {
       console.warn('Heartbeat timeout, reconnecting...');
       this.reconnect();
     }, 60000);
@@ -158,9 +167,13 @@ class WebSocketService {
   }
 
   private cleanup(): void {
-    if (this.heartbeatInterval) {
-      clearTimeout(this.heartbeatInterval);
-      this.heartbeatInterval = null;
+    if (this.heartbeatIntervalId) {
+      window.clearInterval(this.heartbeatIntervalId);
+      this.heartbeatIntervalId = null;
+    }
+    if (this.heartbeatTimeoutId) {
+      window.clearTimeout(this.heartbeatTimeoutId);
+      this.heartbeatTimeoutId = null;
     }
     this.isConnected = false;
   }

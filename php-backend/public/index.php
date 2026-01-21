@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
+use Dotenv\Dotenv;
 use Slim\Factory\AppFactory;
 use Slim\Routing\RouteCollectorProxy;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -24,7 +25,7 @@ use VotingSystem\Middleware\JsonBodyParserMiddleware;
 use VotingSystem\Services\Logger;
 
 // Load environment variables
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load();
 
 // Create Slim App
@@ -32,7 +33,7 @@ $app = AppFactory::create();
 
 // Add error middleware
 $app->addErrorMiddleware(
-    $_ENV['APP_ENV'] === 'development',
+    ($_ENV['APP_ENV'] ?? 'production') === 'development',
     true,
     true,
     Logger::getInstance('slim-errors')
@@ -60,21 +61,26 @@ $app->group('/api/v1', function (RouteCollectorProxy $group) {
     $group->post('/auth/register', [AuthController::class, 'register']);
     $group->post('/auth/logout', [AuthController::class, 'logout'])->add(new AuthMiddleware());
     $group->get('/auth/verify', [AuthController::class, 'verifyToken'])->add(new AuthMiddleware());
+    $group->get('/auth/profile', [AuthController::class, 'getProfile'])->add(new AuthMiddleware());
 
-    // User profile routes
+    // User profile routes (backward-compatible)
     $group->get('/profile', [AuthController::class, 'getProfile'])->add(new AuthMiddleware());
     $group->put('/profile', [AuthController::class, 'updateProfile'])->add(new AuthMiddleware());
 
     // Election routes
     $group->get('/elections', [ElectionController::class, 'getElections'])->add(new AuthMiddleware());
+    $group->get('/elections/active', [ElectionController::class, 'getActiveElections'])->add(new AuthMiddleware());
     $group->get('/elections/{id}', [ElectionController::class, 'getElection'])->add(new AuthMiddleware());
     $group->get('/elections/{id}/candidates', [ElectionController::class, 'getElectionCandidates'])->add(new AuthMiddleware());
+    $group->get('/elections/{id}/eligibility', [ElectionController::class, 'checkEligibility'])->add(new AuthMiddleware());
 
     // Voting routes
     $group->post('/votes', [VoteController::class, 'castVote'])->add(new AuthMiddleware());
+    $group->post('/votes/cast', [VoteController::class, 'castVote'])->add(new AuthMiddleware());
     $group->get('/votes/{id}', [VoteController::class, 'getVoteDetails'])->add(new AuthMiddleware());
     $group->get('/votes/history', [VoteController::class, 'getVotingHistory'])->add(new AuthMiddleware());
     $group->post('/votes/{id}/verify', [VoteController::class, 'verifyVote'])->add(new AuthMiddleware());
+    $group->get('/votes/verify/{id}', [VoteController::class, 'verifyVote'])->add(new AuthMiddleware());
 
     // Blockchain routes
     $group->get('/blockchain/stats', [ElectionController::class, 'getBlockchainStats'])->add(new AuthMiddleware());
@@ -85,9 +91,11 @@ $app->group('/api/v1', function (RouteCollectorProxy $group) {
     // Admin routes
     $group->group('/admin', function (RouteCollectorProxy $adminGroup) {
         // User management
+        $adminGroup->get('/pending-registrations', [AdminController::class, 'getPendingRegistrations']);
         $adminGroup->get('/users/pending', [AdminController::class, 'getPendingRegistrations']);
         $adminGroup->post('/users/{id}/verify', [AdminController::class, 'verifyUser']);
         $adminGroup->post('/users/{id}/reject', [AdminController::class, 'rejectUser']);
+        $adminGroup->post('/users/{id}/status', [AdminController::class, 'updateUserStatus']);
 
         // Election management
         $adminGroup->post('/elections', [AdminController::class, 'createElection']);
@@ -102,11 +110,12 @@ $app->group('/api/v1', function (RouteCollectorProxy $group) {
 
         // Election results
         $adminGroup->get('/elections/{id}/results', [AdminController::class, 'getElectionResults']);
+        $adminGroup->get('/elections/{id}/audit', [AdminController::class, 'getAuditTrail']);
 
-        // Audit trail
+        // Audit trail (legacy)
         $adminGroup->get('/audit', [AdminController::class, 'getAuditTrail']);
         $adminGroup->get('/audit/{id}', [AdminController::class, 'getAuditEntry']);
-    })->add(new AdminMiddleware());
+    })->add(new AdminMiddleware())->add(new AuthMiddleware());
 
 });
 

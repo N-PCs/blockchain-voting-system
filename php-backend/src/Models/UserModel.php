@@ -198,6 +198,36 @@ class UserModel
     }
 
     /**
+     * Get user by UUID
+     *
+     * @param string $uuid User UUID
+     * @return array|null User data or null if not found
+     */
+    public function getUserByUuid(string $uuid): ?array
+    {
+        $sql = "SELECT 
+            id, 
+            uuid, 
+            email, 
+            first_name, 
+            last_name, 
+            date_of_birth, 
+            government_id, 
+            user_type, 
+            registration_status,
+            is_active,
+            created_at,
+            updated_at
+        FROM users 
+        WHERE uuid = :uuid AND is_active = TRUE";
+
+        $stmt = DatabaseConfig::executeQuery($sql, [':uuid' => $uuid]);
+        $user = $stmt->fetch();
+
+        return $user ?: null;
+    }
+
+    /**
      * Get user by government ID
      * 
      * @param string $governmentId Government ID
@@ -305,7 +335,11 @@ class UserModel
             last_name, 
             date_of_birth, 
             government_id, 
-            created_at
+            user_type,
+            registration_status,
+            is_active,
+            created_at,
+            updated_at
         FROM users 
         WHERE user_type = 'voter' 
             AND registration_status = 'pending'

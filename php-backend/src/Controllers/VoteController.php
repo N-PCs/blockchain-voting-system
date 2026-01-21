@@ -68,24 +68,23 @@ class VoteController
      */
     public function castVote(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $data = $request->getParsedBody();
-        $userId = $request->getAttribute('user_id'); // From JWT middleware
+        $data = $request->getParsedBody() ?? [];
+        $userId = (int) $request->getAttribute('user_id'); // From JWT middleware
+        $electionUuid = $data['election_id'] ?? $data['electionId'] ?? null;
+        $candidateUuid = $data['candidate_id'] ?? $data['candidateId'] ?? null;
         
         $this->logger->info('Vote casting initiated', [
             'user_id' => $userId,
-            'election_id' => $data['election_id'] ?? null
+            'election_id' => $electionUuid
         ]);
 
         try {
             // Validate required fields
-            $requiredFields = ['election_id', 'candidate_id'];
-            foreach ($requiredFields as $field) {
-                if (empty($data[$field])) {
-                    return $this->jsonResponse($response, [
-                        'success' => false,
-                        'error' => "Missing required field: {$field}"
-                    ], 400);
-                }
+            if (empty($electionUuid) || empty($candidateUuid)) {
+                return $this->jsonResponse($response, [
+                    'success' => false,
+                    'error' => 'Missing required field: election_id or candidate_id'
+                ], 400);
             }
 
             // Get user information
@@ -106,7 +105,7 @@ class VoteController
             }
 
             // Check election eligibility
-            $election = $this->electionModel->getElectionByUuid($data['election_id']);
+            $election = $this->electionModel->getElectionByUuid($electionUuid);
             if (!$election) {
                 return $this->jsonResponse($response, [
                     'success' => false,
@@ -142,7 +141,7 @@ class VoteController
             }
 
             // Verify candidate exists in this election
-            $candidate = $this->electionModel->getCandidateByUuid($data['candidate_id']);
+            $candidate = $this->electionModel->getCandidateByUuid($candidateUuid);
             if (!$candidate || $candidate['election_id'] !== $election['id']) {
                 return $this->jsonResponse($response, [
                     'success' => false,
@@ -243,7 +242,7 @@ class VoteController
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                     'user_id' => $userId,
-                    'election_id' => $data['election_id']
+                    'election_id' => $electionUuid
                 ]);
                 
                 throw $e; // Re-throw for outer catch block
@@ -276,7 +275,7 @@ class VoteController
      */
     public function verifyVote(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $voteId = $request->getAttribute('vote_id');
+        $voteId = $request->getAttribute('vote_id') ?? $request->getAttribute('id');
         
         try {
             // Get vote from database
@@ -358,8 +357,8 @@ class VoteController
      */
     public function getVoteDetails(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $voteId = $request->getAttribute('vote_id');
-        $userId = $request->getAttribute('user_id');
+        $voteId = $request->getAttribute('vote_id') ?? $request->getAttribute('id');
+        $userId = (int) $request->getAttribute('user_id');
         
         try {
             $vote = $this->voteModel->getVoteByUuid($voteId);

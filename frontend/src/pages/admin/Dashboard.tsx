@@ -7,7 +7,6 @@ import {
   Button,
   Badge,
   Table,
-  ProgressBar,
   Alert,
   Spinner,
   Dropdown,
@@ -24,7 +23,7 @@ import {
   FaEye,
   FaDownload,
 } from 'react-icons/fa';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 
@@ -34,7 +33,6 @@ import SystemHealth from '@/components/admin/SystemHealth';
 import RecentActivity from '@/components/admin/RecentActivity';
 
 // Hooks
-import { useAuth } from '@/hooks/useAuth';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useApi } from '@/hooks/useApi';
 
@@ -42,9 +40,8 @@ import { useApi } from '@/hooks/useApi';
 import { Election, User, VoteNotification, BlockNotification } from '@/types';
 
 const AdminDashboard: React.FC = () => {
-  const { user } = useAuth();
   const api = useApi();
-  const { isConnected  } = useWebSocket();
+  const { isConnected, onVoteCast, onBlockMined } = useWebSocket();
 
   const [systemStats, setSystemStats] = useState({
     totalVoters: 0,
@@ -123,7 +120,7 @@ const AdminDashboard: React.FC = () => {
       if (blockchainRes.success && blockchainRes.data) {
         setSystemStats(prev => ({
           ...prev,
-          blockchainBlocks: blockchainRes.data.chainLength,
+          blockchainBlocks: blockchainRes.data!.chainLength,
         }));
       }
 
@@ -254,7 +251,7 @@ const AdminDashboard: React.FC = () => {
       value: systemStats.pendingRegistrations,
       icon: <FaClipboardCheck className="text-warning" />,
       change: 'Need Review',
-      changeType: systemStats.pendingRegistrations > 0 ? 'negative' : 'positive',
+      changeType: (systemStats.pendingRegistrations > 0 ? 'negative' : 'positive') as 'positive' | 'negative' | 'neutral',
       link: '/admin/pending-registrations',
     },
     {
@@ -262,7 +259,7 @@ const AdminDashboard: React.FC = () => {
       value: systemStats.activeElections,
       icon: <FaVoteYea className="text-success" />,
       change: systemStats.activeElections > 0 ? 'Live' : 'None',
-      changeType: systemStats.activeElections > 0 ? 'positive' : 'neutral',
+      changeType: (systemStats.activeElections > 0 ? 'positive' : 'neutral') as 'positive' | 'negative' | 'neutral',
       link: '/elections',
     },
     {
@@ -270,7 +267,7 @@ const AdminDashboard: React.FC = () => {
       value: systemStats.totalVotes.toLocaleString(),
       icon: <FaChartBar className="text-info" />,
       change: '+12.5%',
-      changeType: 'positive',
+      changeType: 'positive' as const,
       link: '/votes/history',
     },
     {
@@ -278,7 +275,7 @@ const AdminDashboard: React.FC = () => {
       value: systemStats.blockchainBlocks,
       icon: <FaBell className="text-purple" />,
       change: '+3',
-      changeType: 'positive',
+      changeType: 'positive' as const,
       link: '/blockchain',
     },
     {
@@ -290,7 +287,7 @@ const AdminDashboard: React.FC = () => {
         <FaExclamationTriangle className="text-danger" />
       ),
       change: systemStats.systemHealth > 90 ? 'Optimal' : 'Needs Attention',
-      changeType: systemStats.systemHealth > 90 ? 'positive' : 'negative',
+      changeType: (systemStats.systemHealth > 90 ? 'positive' : 'negative') as 'positive' | 'negative' | 'neutral',
       link: '#',
     },
   ];
@@ -553,7 +550,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* Recent Activity */}
         <Col lg={6}>
-          <RecentActivity votes={recentVotes} />
+          <RecentActivity activities={recentVotes} />
         </Col>
       </Row>
 

@@ -25,7 +25,7 @@ import {
   FaFire,
   FaLock,
 } from 'react-icons/fa';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-toastify';
 
 // Components
@@ -41,7 +41,7 @@ import { Block, BlockchainStats, BlockNotification } from '@/types';
 
 const BlockchainExplorer: React.FC = () => {
   const api = useApi();
-  const { isConnected, notifications, onBlockMined } = useWebSocket();
+  const { isConnected, onBlockMined } = useWebSocket();
 
   const [stats, setStats] = useState<BlockchainStats | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -235,7 +235,7 @@ const BlockchainExplorer: React.FC = () => {
           <Col key={index} xs={6} md={4} lg={2}>
             <Card className="h-100">
               <Card.Body className="text-center">
-                <div className={`text-${stat.color} mb-2`} style={{ fontSize: '1.5rem' }}>
+                <div className={`text-${stat.color} mb-2 fs-2`}>
                   {stat.icon}
                 </div>
                 <h4 className="mb-1">{stat.value.toLocaleString()}</h4>
@@ -303,13 +303,16 @@ const BlockchainExplorer: React.FC = () => {
                 </InputGroup>
               </Col>
               <Col md={3} className="mb-2">
-                <Form.Select
+                <select className="form-select"
+                  aria-label="Select search type"
+                  title="Select search type"
+                  name="searchType"
                   value={searchType}
                   onChange={(e) => setSearchType(e.target.value as any)}
                 >
                   <option value="block">Search by Block</option>
                   <option value="transaction">Search by Transaction</option>
-                </Form.Select>
+                </select>
               </Col>
               <Col md={3} className="mb-2">
                 <Button type="submit" variant="primary" className="w-100" disabled={isLoading}>
@@ -378,10 +381,7 @@ const BlockchainExplorer: React.FC = () => {
                 <>
                   <div className="text-center mb-4">
                     <div
-                      className="display-4 fw-bold mb-2"
-                      style={{
-                        color: stats.isValid ? '#28a745' : '#dc3545',
-                      }}
+                      className={`display-4 fw-bold mb-2 ${stats.isValid ? 'text-success' : 'text-danger'}`}
                     >
                       {stats.isValid ? '✓' : '✗'}
                     </div>

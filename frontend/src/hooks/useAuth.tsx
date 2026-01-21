@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '@/services/api';
 import { User } from '@/types';
+import { AUTH_TOKEN_KEY, USER_STORAGE_KEY } from '@/constants/storage';
 
 interface AuthContextType {
   user: User | null;
@@ -33,15 +34,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        // Verify token with backend
-        const response = await api.get('/auth/verify');
-        setUser(response.data.user);
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      if (!token) {
+        return;
+      }
+
+      const response = await api.getProfile();
+      if (response.success && response.data) {
+        setUser(response.data);
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.data));
+      } else {
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        localStorage.removeItem(USER_STORAGE_KEY);
       }
     } catch (error) {
-      // Token is invalid, remove it
-      localStorage.removeItem('authToken');
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(USER_STORAGE_KEY);
     } finally {
       setIsLoading(false);
     }
@@ -50,27 +58,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.login({ email, password });
 
-      if (response.data.success) {
-        const { user: userData, token } = response.data.data;
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Login failed');
+      }
 
-        // Store token
-        localStorage.setItem('authToken', token);
+      const { user: userData } = response.data;
+      setUser(userData);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
 
-        // Set user
-        setUser(userData);
+      toast.success('Login successful!');
 
-        toast.success('Login successful!');
-
-        // Redirect based on user type
-        if (userData.userType === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/');
-        }
+      if (userData.userType === 'admin') {
+        navigate('/admin');
       } else {
-        throw new Error(response.data.error || 'Login failed');
+        navigate('/');
       }
     } catch (error: any) {
       toast.error(error.message || 'Login failed. Please try again.');
@@ -81,7 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
     setUser(null);
     toast.info('Logged out successfully');
     navigate('/login');
@@ -90,13 +94,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (userData: any) => {
     try {
       setIsLoading(true);
-      const response = await api.post('/auth/register', userData);
+      const response = await api.register(userData);
 
-      if (response.data.success) {
+      if (response.success) {
         toast.success('Registration submitted! Please wait for admin approval.');
         navigate('/login');
       } else {
-        throw new Error(response.data.error || 'Registration failed');
+        throw new Error(response.error || 'Registration failed');
       }
     } catch (error: any) {
       toast.error(error.message || 'Registration failed. Please try again.');

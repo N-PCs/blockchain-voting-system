@@ -11,6 +11,7 @@ import threading
 import sqlite3
 from pathlib import Path
 import logging
+import secrets
 
 from .block import Block
 from .transaction import VoteTransaction, TransactionValidator
@@ -195,7 +196,7 @@ class Blockchain:
             logger.error(f"Error saving block to DB: {e}")
             raise
 
-    def get_latest_block(self) -> Block:
+    def get_latest_block(self) -> Optional[Block]:
         """
         Get the latest block in the chain.
         
@@ -283,6 +284,9 @@ class Blockchain:
             
             # Create new block
             previous_block = self.get_latest_block()
+            if previous_block is None:
+                logger.error("Cannot mine: blockchain has no genesis block")
+                return None
             new_block = Block(
                 index=previous_block.index + 1,
                 timestamp=time.time(),

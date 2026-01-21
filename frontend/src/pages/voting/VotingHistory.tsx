@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Badge, Alert, Button } from 'react-bootstrap';
+import { Container, Card, Table, Badge, Alert, Button } from 'react-bootstrap';
 import { FaHistory, FaCheckCircle, FaClock, FaLink } from 'react-icons/fa';
-import { useAuth } from '@/hooks/useAuth';
 import api from '@/services/api';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
@@ -25,7 +24,6 @@ const VotingHistory: React.FC = () => {
   const [votes, setVotes] = useState<VoteHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { user } = useAuth();
 
   useEffect(() => {
     fetchVotingHistory();

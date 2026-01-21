@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use VotingSystem\Models\UserModel;
 use VotingSystem\Models\ElectionModel;
+use VotingSystem\Models\VoteModel;
 use VotingSystem\Services\Logger;
 
 /**
@@ -31,12 +32,18 @@ class AdminController
     private Logger $logger;
 
     /**
+     * @var VoteModel Vote model
+     */
+    private VoteModel $voteModel;
+
+    /**
      * Constructor
      */
     public function __construct()
     {
         $this->userModel = new UserModel();
         $this->electionModel = new ElectionModel();
+        $this->voteModel = new VoteModel();
         $this->logger = new Logger('admin-controller');
     }
 
@@ -47,10 +54,26 @@ class AdminController
     {
         try {
             $users = $this->userModel->getPendingRegistrations();
+            $mappedUsers = array_map(function ($user) {
+                return [
+                    'id' => $user['uuid'],
+                    'uuid' => $user['uuid'],
+                    'email' => $user['email'],
+                    'firstName' => $user['first_name'],
+                    'lastName' => $user['last_name'],
+                    'dateOfBirth' => $user['date_of_birth'],
+                    'governmentId' => $user['government_id'],
+                    'userType' => $user['user_type'] ?? 'voter',
+                    'registrationStatus' => $user['registration_status'] ?? 'pending',
+                    'isActive' => (bool)($user['is_active'] ?? true),
+                    'createdAt' => $user['created_at'] ?? null,
+                    'updatedAt' => $user['updated_at'] ?? null,
+                ];
+            }, $users);
 
             return $this->jsonResponse($response, [
                 'success' => true,
-                'data' => $users
+                'data' => $mappedUsers
             ]);
 
         } catch (\Exception $e) {
@@ -93,6 +116,65 @@ class AdminController
             return $this->jsonResponse($response, [
                 'success' => false,
                 'error' => 'Failed to verify user'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update user registration status (verify/reject) using a single endpoint
+     */
+    public function updateUserStatus(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $userIdentifier = (string) $request->getAttribute('id');
+        $adminId = (int) $request->getAttribute('user_id');
+        $status = strtolower((string) ($request->getParsedBody()['status'] ?? ''));
+
+        if (!in_array($status, UserModel::REGISTRATION_STATUSES, true)) {
+            return $this->jsonResponse($response, [
+                'success' => false,
+                'error' => 'Invalid status value'
+            ], 400);
+        }
+
+        try {
+            $user = ctype_digit($userIdentifier)
+                ? $this->userModel->getUserById((int) $userIdentifier)
+                : $this->userModel->getUserByUuid($userIdentifier);
+
+            if (!$user) {
+                return $this->jsonResponse($response, [
+                    'success' => false,
+                    'error' => 'User not found'
+                ], 404);
+            }
+
+            $this->userModel->updateRegistrationStatus((int)$user['id'], $status, $adminId);
+
+            $this->logger->info('User status updated', [
+                'user_id' => $user['id'],
+                'admin_id' => $adminId,
+                'status' => $status
+            ]);
+
+            return $this->jsonResponse($response, [
+                'success' => true,
+                'message' => 'User status updated',
+                'data' => [
+                    'id' => $user['uuid'],
+                    'status' => $status
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to update user status', [
+                'user_identifier' => $userIdentifier,
+                'admin_id' => $adminId,
+                'error' => $e->getMessage()
+            ]);
+
+            return $this->jsonResponse($response, [
+                'success' => false,
+                'error' => 'Failed to update user status'
             ], 500);
         }
     }
@@ -228,7 +310,47 @@ class AdminController
 
     public function getAuditTrail(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        return $this->jsonResponse($response, ['success' => false, 'error' => 'Not implemented'], 501);
+        $electionIdentifier = $request->getAttribute('id') ?? $request->getAttribute('electionId');
+        $page = (int) ($request->getQueryParams()['page'] ?? 1);
+        $limit = (int) ($request->getQueryParams()['limit'] ?? 50);
+
+        try {
+            $election = ctype_digit((string)$electionIdentifier)
+                ? $this->electionModel->getElectionById((int)$electionIdentifier)
+                : $this->electionModel->getElectionByUuid((string)$electionIdentifier);
+
+            if (!$election) {
+                return $this->jsonResponse($response, [
+                    'success' => false,
+                    'error' => 'Election not found'
+                ], 404);
+            }
+
+            $audit = $this->voteModel->getAuditTrail((int)$election['id'], $page, $limit);
+
+            return $this->jsonResponse($response, [
+                'success' => true,
+                'data' => [
+                    'items' => $audit,
+                    'pagination' => [
+                        'page' => $page,
+                        'limit' => $limit,
+                        'total' => count($audit)
+                    ]
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to get audit trail', [
+                'election_identifier' => $electionIdentifier,
+                'error' => $e->getMessage()
+            ]);
+
+            return $this->jsonResponse($response, [
+                'success' => false,
+                'error' => 'Failed to load audit trail'
+            ], 500);
+        }
     }
 
     public function getAuditEntry(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface

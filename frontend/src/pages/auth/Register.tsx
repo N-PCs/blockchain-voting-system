@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { FaUserPlus } from 'react-icons/fa';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -18,7 +18,6 @@ const Register: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register } = useAuth();
-  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

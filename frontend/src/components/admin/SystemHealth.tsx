@@ -2,11 +2,9 @@ import React from 'react';
 import { Card, ProgressBar, Badge } from 'react-bootstrap';
 import { FaServer, FaDatabase, FaNetworkWired, FaMicrochip } from 'react-icons/fa';
 
-interface SystemHealthProps {
-  stats?: any;
-}
+interface SystemHealthProps {}
 
-const SystemHealth: React.FC<SystemHealthProps> = ({ stats }) => {
+const SystemHealth: React.FC<SystemHealthProps> = () => {
   const services = [
     {
       name: 'Database',

@@ -88,18 +88,21 @@ blockchain-voting-system/
 - **Python** 3.8+ with pip 20.0+
 - **MySQL** 5.7+ or **MariaDB** 10.3+
 
-### Option 1: Windows XAMPP Setup (Recommended)
+### Option 1: Windows XAMPP Setup (Easiest)
 
-```bash
+```batch
 # Clone the repository
 git clone <repository-url>
 cd blockchain-voting-system
 
+# Install XAMPP from https://www.apachefriends.org/
+# Start XAMPP Control Panel and start Apache + MySQL
+
 # Run Windows setup script
 setup-windows.bat
 
-# Start XAMPP Control Panel and start Apache + MySQL
-# Open phpMyAdmin (http://localhost/phpmyadmin) and create database 'voting_system'
+# Open phpMyAdmin (http://localhost/phpmyadmin)
+# Create database 'voting_system' and import database/schema.sql
 
 # Run database setup
 setup-database.bat
@@ -113,6 +116,41 @@ cd ../frontend && npm install
 # Terminal 1: cd python-blockchain && python run.py
 # Terminal 2: cd node-ws && npm start
 # Terminal 3: cd frontend && npm run dev
+
+# Access the application
+start http://localhost:5173
+```
+
+### Option 2: Windows Standalone MySQL Setup (Advanced)
+
+```batch
+# Clone the repository
+git clone <repository-url>
+cd blockchain-voting-system
+
+# Install MySQL Server from https://dev.mysql.com/downloads/mysql/
+# Start MySQL service (run Command Prompt as Administrator)
+# net start MySQL96  (or whatever your service name is)
+
+# Run Windows setup script
+setup-windows.bat
+
+# Set up MySQL database and user
+mysql-setup.bat
+
+# Run database setup
+setup-database.bat
+
+# Install dependencies
+cd python-blockchain && pip install -r requirements.txt
+cd ../node-ws && npm install
+cd ../frontend && npm install
+
+# Start services
+# Terminal 1: cd python-blockchain && python run.py
+# Terminal 2: cd node-ws && npm start
+# Terminal 3: cd frontend && npm run dev
+# Terminal 4: cd php-backend && php -S localhost:8000 -t public/
 
 # Access the application
 start http://localhost:5173
@@ -189,8 +227,9 @@ npm run dev
 
 ### Windows Setup
 
-For Windows users, use the provided setup scripts:
+For Windows users, choose one of the database options:
 
+#### Option 1: XAMPP (Easiest)
 ```batch
 # Run the setup script to create all environment files
 setup-windows.bat
@@ -198,7 +237,21 @@ setup-windows.bat
 # Start XAMPP Control Panel
 # Start Apache and MySQL services
 
-# Setup database
+# Open phpMyAdmin and create/import database
+# Run database setup
+setup-database.bat
+```
+
+#### Option 2: Standalone MySQL (Advanced)
+```batch
+# Run the setup script to create all environment files
+setup-windows.bat
+
+# Ensure MySQL service is running
+# Run MySQL setup script
+mysql-setup.bat
+
+# Run database setup
 setup-database.bat
 ```
 

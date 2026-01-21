@@ -38,8 +38,8 @@ import { AuthProvider } from '@/hooks/useAuth';
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <ErrorBoundary>
           <div className="app-container">
             <Navbar />
@@ -60,8 +60,8 @@ const App: React.FC = () => {
             pauseOnHover
           />
         </ErrorBoundary>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 };
 

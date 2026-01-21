@@ -7,8 +7,7 @@ import {
   FaHistory,
   FaLink,
   FaCog,
-  FaUsers,
-  FaChartBar
+  FaUsers
 } from 'react-icons/fa';
 import { useAuth } from '@/hooks/useAuth';
 

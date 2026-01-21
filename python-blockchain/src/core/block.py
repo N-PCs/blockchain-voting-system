@@ -97,8 +97,8 @@ class Block:
         if self.hash != self.calculate_hash():
             return False
 
-        # Check proof of work
-        if not self.hash.startswith('0' * difficulty):
+        # Check proof of work (genesis block does not require PoW)
+        if self.index != 0 and not self.hash.startswith('0' * difficulty):
             return False
 
         # Validate index

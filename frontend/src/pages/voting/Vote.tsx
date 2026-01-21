@@ -304,7 +304,7 @@ const Vote: React.FC = () => {
           <Col key={candidate.id} xs={12} md={6} lg={4}>
             <CandidateCard
               candidate={candidate}
-              isSelected={selectedCandidate === candidate.uuid}
+              selected={selectedCandidate === candidate.uuid}
               onSelect={() => handleCandidateSelect(candidate.uuid)}
             />
           </Col>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Row,
@@ -22,9 +21,6 @@ import {
   FaEye,
   FaFilter,
   FaDownload,
-  FaEnvelope,
-  FaIdCard,
-  FaCalendar,
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { format, parseISO, differenceInYears } from 'date-fns';
@@ -36,7 +32,6 @@ import { useApi } from '@/hooks/useApi';
 import { User } from '@/types';
 
 const PendingRegistrations: React.FC = () => {
-  const navigate = useNavigate();
   const api = useApi();
 
   const [registrations, setRegistrations] = useState<User[]>([]);
@@ -133,7 +128,7 @@ const PendingRegistrations: React.FC = () => {
     }
   };
 
-  const handleReject = async (reason?: string) => {
+  const handleReject = async (_reason?: string) => {
     if (!selectedUser) return;
 
     try {
@@ -283,13 +278,16 @@ const PendingRegistrations: React.FC = () => {
                 <InputGroup.Text>
                   <FaFilter />
                 </InputGroup.Text>
-                <Form.Select
+                <select className="form-select"
+                  aria-label="Filter registrations by status"
+                  title="Filter registrations by status"
+                  name="registrationFilter"
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as any)}
                 >
                   <option value="pending">Pending Only</option>
                   <option value="all">All Registrations</option>
-                </Form.Select>
+                </select>
               </InputGroup>
             </Col>
             <Col md={3} className="mb-2">

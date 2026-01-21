@@ -19,7 +19,6 @@ import {
   FaChartBar,
   FaDownload,
   FaPrint,
-  FaShare,
   FaEye,
   FaClock,
   FaUsers,
@@ -42,7 +41,7 @@ const ElectionResults: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const api = useApi();
-  const { isConnected } = useWebSocket();
+  const { onElectionUpdate } = useWebSocket();
 
   const [election, setElection] = useState<Election | null>(null);
   const [results, setResults] = useState<any[]>([]);
@@ -524,7 +523,7 @@ const ElectionResults: React.FC = () => {
                             fill="#8884d8"
                             dataKey="votes"
                           >
-                            {chartData.map((entry, index) => (
+                            {chartData.map((_, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>

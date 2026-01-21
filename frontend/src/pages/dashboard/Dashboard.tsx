@@ -140,4 +140,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-      const electionsRes = await api.getActiveElections();

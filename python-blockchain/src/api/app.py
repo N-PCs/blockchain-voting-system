@@ -148,7 +148,7 @@ def get_blocks():
         
         # Parse pagination parameters
         page = int(request.args.get('page', 1))
-        per_page = int(request.args.get('per_page', 10))
+        per_page = int(request.args.get('per_page', request.args.get('perPage', 10)))
         
         start_idx = (page - 1) * per_page
         end_idx = start_idx + per_page
@@ -235,12 +235,12 @@ def submit_transaction():
             }), 400
         
         bc = get_blockchain()
-        
-        # Create transaction
+
+        # Create a single transaction instance so IDs remain consistent
         transaction = VoteTransaction.from_dict(data)
-        
-        # Add to blockchain
-        success, message = bc.add_transaction(data)
+
+        # Add to blockchain using the normalized transaction dict
+        success, message = bc.add_transaction(transaction.to_dict())
         
         if success:
             logger.info(f"Transaction submitted: {transaction.transaction_id}")
@@ -399,7 +399,8 @@ def mine_block():
     """Manually trigger block mining (for testing/admin)."""
     try:
         bc = get_blockchain()
-        miner_address = request.json.get('miner_address', 'manual_miner')
+        payload = request.get_json(silent=True) or {}
+        miner_address = payload.get('miner_address', 'manual_miner')
         
         if not bc.pending_transactions:
             return jsonify({

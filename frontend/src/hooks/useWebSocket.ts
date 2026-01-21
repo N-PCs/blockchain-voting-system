@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAuth } from './useAuth';
 import { toast } from 'react-toastify';
+import { useAuth } from './useAuth';
+import api from '@/services/api';
+import { AUTH_TOKEN_KEY } from '@/constants/storage';
 
 interface WebSocketMessage {
   type: string;
@@ -11,10 +13,11 @@ interface WebSocketMessage {
 export const useWebSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
-  const [notifications, setNotifications] = useState<WebSocketMessage[]>([]);
+  const [notifications] = useState<WebSocketMessage[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
+  const messageHandlersRef = useRef<Map<string, Set<(message: WebSocketMessage) => void>>>(new Map());
   const maxReconnectAttempts = 5;
   const reconnectDelay = 3000;
 
@@ -25,8 +28,14 @@ export const useWebSocket = () => {
       return;
     }
 
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) {
+      console.warn('No auth token available for WebSocket connection');
+      return;
+    }
+
     try {
-      const wsUrl = `ws://localhost:3001?token=${localStorage.getItem('authToken')}`;
+      const wsUrl = `${api.getWebSocketUrl()}?token=${token}`;
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
@@ -46,6 +55,12 @@ export const useWebSocket = () => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
           setLastMessage(message);
+
+          // Call registered handlers for this message type
+          const handlers = messageHandlersRef.current.get(message.type);
+          if (handlers) {
+            handlers.forEach(handler => handler(message));
+          }
 
           // Handle different message types
           switch (message.type) {
@@ -161,14 +176,14 @@ export const useWebSocket = () => {
     });
 
     // Add to message handlers
-    if (!this.messageHandlers.has('vote_cast')) {
-      this.messageHandlers.set('vote_cast', new Set());
+    if (!messageHandlersRef.current.has('vote_cast')) {
+      messageHandlersRef.current.set('vote_cast', new Set());
     }
-    this.messageHandlers.get('vote_cast')?.add(handler);
+    messageHandlersRef.current.get('vote_cast')!.add(handler);
 
     // Return unsubscribe function
     return () => {
-      this.messageHandlers.get('vote_cast')?.delete(handler);
+      messageHandlersRef.current.get('vote_cast')?.delete(handler);
     };
   }, [notifications]);
 
@@ -187,14 +202,14 @@ export const useWebSocket = () => {
     });
 
     // Add to message handlers
-    if (!this.messageHandlers.has('block_mined')) {
-      this.messageHandlers.set('block_mined', new Set());
+    if (!messageHandlersRef.current.has('block_mined')) {
+      messageHandlersRef.current.set('block_mined', new Set());
     }
-    this.messageHandlers.get('block_mined')?.add(handler);
+    messageHandlersRef.current.get('block_mined')!.add(handler);
 
     // Return unsubscribe function
     return () => {
-      this.messageHandlers.get('block_mined')?.delete(handler);
+      messageHandlersRef.current.get('block_mined')?.delete(handler);
     };
   }, [notifications]);
 
@@ -213,14 +228,14 @@ export const useWebSocket = () => {
     });
 
     // Add to message handlers
-    if (!this.messageHandlers.has('election_update')) {
-      this.messageHandlers.set('election_update', new Set());
+    if (!messageHandlersRef.current.has('election_update')) {
+      messageHandlersRef.current.set('election_update', new Set());
     }
-    this.messageHandlers.get('election_update')?.add(handler);
+    messageHandlersRef.current.get('election_update')!.add(handler);
 
     // Return unsubscribe function
     return () => {
-      this.messageHandlers.get('election_update')?.delete(handler);
+      messageHandlersRef.current.get('election_update')?.delete(handler);
     };
   }, [notifications]);
 

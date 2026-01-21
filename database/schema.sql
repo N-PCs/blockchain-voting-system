@@ -149,8 +149,11 @@ VALUES (
 
 -- Insert initial blockchain sync record
 INSERT INTO blockchain_sync (last_block_index, last_block_hash, status)
-VALUES (0, '0' * 64, 'synced') -- Genesis block hash (64 zeros)
-ON DUPLICATE KEY UPDATE sync_timestamp = CURRENT_TIMESTAMP;
+VALUES (
+    0,
+    REPEAT('0', 64), -- Genesis block hash (64 zeros)
+    'synced'
+) ON DUPLICATE KEY UPDATE sync_timestamp = CURRENT_TIMESTAMP;
 
 -- Enable foreign key constraints
 SET FOREIGN_KEY_CHECKS = 1;
