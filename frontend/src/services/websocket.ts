@@ -18,8 +18,7 @@ class WebSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
-  private heartbeatIntervalId: number | null = null;
-  private heartbeatTimeoutId: number | null = null;
+  private heartbeatInterval: number | null = null;
   private messageHandlers = new Map<string, MessageHandler[]>();
   private connectionHandlers: ConnectionHandler[] = [];
   private isConnected = false;
@@ -113,33 +112,25 @@ class WebSocketService {
 
   private handlePong(): void {
     // Reset heartbeat timeout
-    if (this.heartbeatTimeoutId) {
-      window.clearTimeout(this.heartbeatTimeoutId);
-    }
-    this.heartbeatTimeoutId = window.setTimeout(() => {
+    if (this.heartbeatInterval) {
+      clearTimeout(this.heartbeatInterval);
+      this.heartbeatInterval = window.setTimeout(() => {
         console.warn('Heartbeat timeout, reconnecting...');
         this.reconnect();
       }, 60000); // 60 second timeout
+    }
   }
 
   private startHeartbeat(): void {
-    // Clear existing timers if any to avoid stacking intervals/timeouts
-    if (this.heartbeatIntervalId) {
-      window.clearInterval(this.heartbeatIntervalId);
-    }
-    if (this.heartbeatTimeoutId) {
-      window.clearTimeout(this.heartbeatTimeoutId);
-    }
-
     // Send ping every 30 seconds
-    this.heartbeatIntervalId = window.setInterval(() => {
+    setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
         this.send({ type: 'ping' });
       }
     }, 30000);
 
     // Set initial heartbeat timeout
-    this.heartbeatTimeoutId = window.setTimeout(() => {
+    this.heartbeatInterval = window.setTimeout(() => {
       console.warn('Heartbeat timeout, reconnecting...');
       this.reconnect();
     }, 60000);
@@ -167,13 +158,9 @@ class WebSocketService {
   }
 
   private cleanup(): void {
-    if (this.heartbeatIntervalId) {
-      window.clearInterval(this.heartbeatIntervalId);
-      this.heartbeatIntervalId = null;
-    }
-    if (this.heartbeatTimeoutId) {
-      window.clearTimeout(this.heartbeatTimeoutId);
-      this.heartbeatTimeoutId = null;
+    if (this.heartbeatInterval) {
+      clearTimeout(this.heartbeatInterval);
+      this.heartbeatInterval = null;
     }
     this.isConnected = false;
   }

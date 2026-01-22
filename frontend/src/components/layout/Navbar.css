@@ -1,0 +1,77 @@
+.navbar-government {
+  background: linear-gradient(135deg, #1a472a 0%, #0d2614 100%) !important;
+  border-bottom: 3px solid #ff9933;
+  padding: 1rem 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-brand-custom {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  flex-wrap: wrap;
+}
+
+.brand-icon {
+  font-size: 2rem;
+  color: #ff9933;
+  display: flex;
+  align-items: center;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.brand-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: white;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.brand-tagline {
+  font-size: 0.75rem;
+  color: #ff9933;
+  font-weight: 500;
+  letter-spacing: 1px;
+  margin-top: 0.25rem;
+}
+
+.welcome-text {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* Responsive design */
+@media (max-width: 992px) {
+  .navbar-brand-custom {
+    margin-bottom: 0.5rem;
+  }
+
+  .brand-title {
+    font-size: 1rem;
+  }
+
+  .brand-tagline {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .brand-title {
+    font-size: 0.95rem;
+  }
+
+  .brand-tagline {
+    display: none;
+  }
+
+  .welcome-text {
+    display: none;
+  }
+}

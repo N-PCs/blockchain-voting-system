@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { toast } from 'react-toastify';
 import { useAuth } from './useAuth';
-import api from '@/services/api';
-import { AUTH_TOKEN_KEY } from '@/constants/storage';
+import { toast } from 'react-toastify';
 
 interface WebSocketMessage {
   type: string;
@@ -28,14 +26,8 @@ export const useWebSocket = () => {
       return;
     }
 
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    if (!token) {
-      console.warn('No auth token available for WebSocket connection');
-      return;
-    }
-
     try {
-      const wsUrl = `${api.getWebSocketUrl()}?token=${token}`;
+      const wsUrl = `ws://localhost:3001?token=${localStorage.getItem('authToken')}`;
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {

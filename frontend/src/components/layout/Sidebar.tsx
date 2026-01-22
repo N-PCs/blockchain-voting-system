@@ -1,19 +1,23 @@
 import React from 'react';
 import { Nav, NavItem, NavLink } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   FaTachometerAlt,
   FaVoteYea,
   FaHistory,
   FaLink,
   FaCog,
-  FaUsers
+  FaUsers,
+  FaChartLine
 } from 'react-icons/fa';
 import { useAuth } from '@/hooks/useAuth';
+import './Sidebar.css';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -21,17 +25,21 @@ const Sidebar: React.FC = () => {
 
   const isAdmin = user?.userType === 'admin';
 
+  const getSidebarItemClass = (path: string) => {
+    return `d-flex align-items-center sidebar-item ${isActive(path) ? 'active' : ''}`;
+  };
+
   return (
-    <div className="sidebar bg-light border-end" style={{ width: '250px', minHeight: 'calc(100vh - 76px)' }}>
+    <div className="sidebar sidebar-government border-end">
       <Nav className="flex-column p-3">
         <NavItem className="mb-2">
           <NavLink
             as={Link}
             to="/"
-            className={`d-flex align-items-center ${isActive('/') ? 'active bg-primary text-white' : 'text-dark'}`}
+            className={getSidebarItemClass('/')}
           >
             <FaTachometerAlt className="me-2" />
-            Dashboard
+            {t('sidebar.dashboard')}
           </NavLink>
         </NavItem>
 
@@ -39,10 +47,10 @@ const Sidebar: React.FC = () => {
           <NavLink
             as={Link}
             to="/elections"
-            className={`d-flex align-items-center ${isActive('/elections') ? 'active bg-primary text-white' : 'text-dark'}`}
+            className={getSidebarItemClass('/elections')}
           >
             <FaVoteYea className="me-2" />
-            Elections
+            {t('sidebar.elections')}
           </NavLink>
         </NavItem>
 
@@ -50,10 +58,10 @@ const Sidebar: React.FC = () => {
           <NavLink
             as={Link}
             to="/votes/history"
-            className={`d-flex align-items-center ${isActive('/votes/history') ? 'active bg-primary text-white' : 'text-dark'}`}
+            className={getSidebarItemClass('/votes/history')}
           >
             <FaHistory className="me-2" />
-            Voting History
+            {t('sidebar.votingHistory')}
           </NavLink>
         </NavItem>
 
@@ -61,28 +69,28 @@ const Sidebar: React.FC = () => {
           <NavLink
             as={Link}
             to="/blockchain"
-            className={`d-flex align-items-center ${isActive('/blockchain') ? 'active bg-primary text-white' : 'text-dark'}`}
+            className={getSidebarItemClass('/blockchain')}
           >
             <FaLink className="me-2" />
-            Blockchain Explorer
+            {t('sidebar.blockchainExplorer')}
           </NavLink>
         </NavItem>
 
         {isAdmin && (
           <>
-            <hr className="my-3" />
-            <div className="sidebar-section-title text-muted mb-2">
-              <small className="fw-bold text-uppercase">Admin Panel</small>
+            <hr className="my-3 border-secondary" />
+            <div className="sidebar-section-title text-muted mb-3">
+              <small className="fw-bold text-uppercase">{t('sidebar.admin')}</small>
             </div>
 
             <NavItem className="mb-2">
               <NavLink
                 as={Link}
                 to="/admin"
-                className={`d-flex align-items-center ${isActive('/admin') ? 'active bg-primary text-white' : 'text-dark'}`}
+                className={getSidebarItemClass('/admin')}
               >
                 <FaCog className="me-2" />
-                Admin Dashboard
+                {t('admin.dashboard')}
               </NavLink>
             </NavItem>
 
@@ -90,10 +98,21 @@ const Sidebar: React.FC = () => {
               <NavLink
                 as={Link}
                 to="/admin/pending-registrations"
-                className={`d-flex align-items-center ${isActive('/admin/pending-registrations') ? 'active bg-primary text-white' : 'text-dark'}`}
+                className={getSidebarItemClass('/admin/pending-registrations')}
               >
                 <FaUsers className="me-2" />
-                Pending Registrations
+                {t('admin.pendingRegistrations')}
+              </NavLink>
+            </NavItem>
+
+            <NavItem className="mb-2">
+              <NavLink
+                as={Link}
+                to="/admin/election-results"
+                className={getSidebarItemClass('/admin/election-results')}
+              >
+                <FaChartLine className="me-2" />
+                {t('admin.electionResults')}
               </NavLink>
             </NavItem>
           </>

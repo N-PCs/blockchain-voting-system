@@ -15,7 +15,6 @@ import {
   BlockchainStats,
   Transaction,
 } from '@/types';
-import { AUTH_TOKEN_KEY, USER_STORAGE_KEY } from '@/constants/storage';
 
 class ApiService {
   private api: AxiosInstance;
@@ -43,13 +42,15 @@ class ApiService {
       },
     });
 
-    // WebSocket URL
-    this.wsUrl = `ws://${window.location.hostname}:3001/ws`;
+    // WebSocket URL - use default if window is not available
+    this.wsUrl = typeof window !== 'undefined' 
+      ? `ws://${window.location.hostname}:3001/ws`
+      : 'ws://localhost:3001/ws';
 
     // Request interceptor for auth token
     this.api.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem(AUTH_TOKEN_KEY);
+        const token = localStorage.getItem('authToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -64,9 +65,10 @@ class ApiService {
       (error) => {
         if (error.response?.status === 401) {
           // Token expired or invalid
-          localStorage.removeItem(AUTH_TOKEN_KEY);
-          localStorage.removeItem(USER_STORAGE_KEY);
-          window.location.href = '/login';
+          localStorage.removeItem('authToken');
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }
@@ -82,15 +84,13 @@ class ApiService {
   async login(credentials: { email: string; password: string }): Promise<ApiResponse<AuthUser>> {
     const response = await this.api.post<ApiResponse<AuthUser>>('/auth/login', credentials);
     if (response.data.success && response.data.data) {
-      localStorage.setItem(AUTH_TOKEN_KEY, response.data.data.token);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.data.data.user));
+      localStorage.setItem('authToken', response.data.data.token);
     }
     return response.data;
   }
 
   async logout(): Promise<void> {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem('authToken');
   }
 
   async getProfile(): Promise<ApiResponse<User>> {
@@ -190,12 +190,7 @@ class ApiService {
 
   // Utility methods
   getAuthToken(): string | null {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
-  }
-
-  getCurrentUser(): User | null {
-    const userStr = localStorage.getItem(USER_STORAGE_KEY);
-    return userStr ? JSON.parse(userStr) : null;
+    return localStorage.getItem('authToken');
   }
 
   isAuthenticated(): boolean {
@@ -203,8 +198,8 @@ class ApiService {
   }
 
   isAdmin(): boolean {
-    const user = this.getCurrentUser();
-    return user?.userType === 'admin';
+    const user = localStorage.getItem('authToken');
+    return user ? true : false;
   }
 
   // WebSocket

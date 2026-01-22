@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Container } from 'react-bootstrap';
 import { ToastContainer } from 'react-toastify';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -34,34 +34,40 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 
 // Context
-import { AuthProvider } from '@/hooks/useAuth';
+import { AuthProvider, useAuth } from '@/hooks/useAuth';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const navigate = useNavigate();
+  const { setNavigationCallback } = useAuth();
+
+  useEffect(() => {
+    // Set the navigation callback
+    setNavigationCallback((path: string) => {
+      navigate(path);
+    });
+  }, [navigate, setNavigationCallback]);
+
   return (
-    <Router>
-      <AuthProvider>
-        <ErrorBoundary>
-          <div className="app-container">
-            <Navbar />
-            <div className="main-content">
-              <AppRoutes />
-            </div>
-            <Footer />
-          </div>
-          <ToastContainer
-            position="top-right"
-            autoClose={5000}
-            hideProgressBar={false}
-            newestOnTop
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-          />
-        </ErrorBoundary>
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <div className="app-container">
+        <Navbar />
+        <div className="main-content">
+          <AppRoutes />
+        </div>
+        <Footer />
+      </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+    </ErrorBoundary>
   );
 };
 
@@ -165,6 +171,16 @@ const AppRoutes: React.FC = () => {
         </Routes>
       </Container>
     </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </Router>
   );
 };
 
