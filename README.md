@@ -98,21 +98,7 @@ You will see new command windows open for each server. The app will be available
 
 - Neel Pandey : 24BCE10303
 - Yash Tripathi : 24BCE10603
-- Mohit Bankar : 24BCE11104
-- Arsh Bakshi : 24BCE10568
+- Mitul Khanna : 24BCE10976
 - Ayush Man Singh Bhadauria : 24BCE10404
 
 ## Demo Video 
-https://drive.google.com/file/d/1d5lqRXHv21fDVzBlNIyYTXGmgYYpAoJ1/view?usp=sharing
-
-## Supervisor
-Dr. Nilesh Kunhare
-
-## Reviewer
-Dr.Gaurav Soni
-<p></p>
-Dr.Ravi Verma
-
-## License
-This project is for educational purposes.
-
